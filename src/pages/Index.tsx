@@ -1,16 +1,16 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import ShopkeeperLayout from '@/components/shopkeeper/ShopkeeperLayout';
+import CustomerLayout from '@/components/customer/CustomerLayout';
+import AuthPage from '@/pages/AuthPage';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
+const Index = () => {
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) return <AuthPage />;
+
+  if (user?.role === 'shopkeeper') return <ShopkeeperLayout />;
+  return <CustomerLayout />;
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
