@@ -134,6 +134,7 @@ const AuthPage = () => {
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
                 useOneTap
+                use_fedcm_for_prompt={false}
                 theme="outline"
                 shape="pill"
                 width="100%"
