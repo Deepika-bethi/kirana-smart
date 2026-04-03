@@ -5,6 +5,7 @@ import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ShoppingBag, Store, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 
 const AuthPage = () => {
@@ -13,9 +14,19 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('customer');
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = (response: any) => {
+    loginWithGoogle(response.credential, role);
+    toast.success(t('auth.welcomeBack'));
+    navigate('/');
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google login failed');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +122,24 @@ const AuthPage = () => {
               {isLogin ? t('auth.login') : t('auth.createAccount')}
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            <div className="flex items-center gap-4 my-6">
+              <div className="h-[1px] flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground font-display uppercase tracking-wider">{t('auth.or')}</span>
+              <div className="h-[1px] flex-1 bg-border" />
+            </div>
+
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                width="100%"
+                text={isLogin ? "signin_with" : "signup_with"}
+              />
+            </div>
           </form>
 
           <div className="mt-6 pt-4 border-t border-border">

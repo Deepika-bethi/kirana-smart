@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 export type UserRole = 'shopkeeper' | 'customer';
 
@@ -7,12 +8,14 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  picture?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => boolean;
   signup: (name: string, email: string, password: string, role: UserRole) => boolean;
+  loginWithGoogle: (credential: string, role: UserRole) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -65,10 +68,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
+  const loginWithGoogle = (credential: string, role: UserRole) => {
+    try {
+      const decoded: any = jwtDecode(credential);
+      const googleUser: User = {
+        id: decoded.sub,
+        name: decoded.name,
+        email: decoded.email,
+        picture: decoded.picture,
+        role: role
+      };
+      setUser(googleUser);
+      
+      // Also save to stored users if not exists
+      const users = getStoredUsers();
+      if (!users.find(u => u.email === googleUser.email)) {
+        localStorage.setItem('six_users', JSON.stringify([...users, { ...googleUser, password: 'google_auth' }]));
+      }
+    } catch (error) {
+      console.error('Google login failed:', error);
+    }
+  };
+
   const logout = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

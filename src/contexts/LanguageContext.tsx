@@ -28,6 +28,7 @@ const translations = {
   'auth.accountCreated': { en: 'Account created! 🚀', hi: 'खाता बनाया! 🚀', te: 'ఖాతా సృష్టించబడింది! 🚀' },
   'auth.invalidCreds': { en: 'Invalid credentials', hi: 'अमान्य क्रेडेंशियल', te: 'చెల్లని ఆధారాలు' },
   'auth.emailExists': { en: 'Email already exists', hi: 'ईमेल पहले से मौजूद है', te: 'ఇమెయిల్ ఇప్పటికే ఉంది' },
+  'auth.or': { en: 'OR', hi: 'या', te: 'లేదా' },
 
   // Nav / Sidebar
   'nav.dashboard': { en: 'Dashboard', hi: 'डैशबोर्ड', te: 'డాష్‌బోర్డ్' },

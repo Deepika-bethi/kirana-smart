@@ -2,13 +2,19 @@ import React from 'react';
 import { useStore, AIInsight } from '@/contexts/StoreContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { Package, TrendingUp, AlertTriangle, IndianRupee, Brain, Flame, ArrowDown } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, IndianRupee, Brain, Trash2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const DashboardView = () => {
-  const { products, transactions, getAIInsights } = useStore();
+  const { products, transactions, getAIInsights, resetAllData } = useStore();
   const { t } = useLanguage();
   const insights = getAIInsights();
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to clear all data? This will log you out and delete all products/transactions.")) {
+      resetAllData();
+    }
+  };
 
   const totalProducts = products.length;
   const lowStock = products.filter(p => p.quantity <= 5).length;
@@ -42,6 +48,13 @@ const DashboardView = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="font-display font-bold text-foreground text-xl">Shop Dashboard</h2>
+        <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all text-sm font-semibold">
+          <Trash2 className="w-4 h-4" />
+          Reset App Data
+        </button>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="glass-card p-5">
