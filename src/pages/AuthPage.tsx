@@ -28,10 +28,10 @@ const AuthPage = () => {
     toast.error('Google login failed');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const success = login(email, password);
+      const success = await login(email, password);
       if (success) {
         toast.success(t('auth.welcomeBack'));
         navigate('/');
@@ -39,7 +39,7 @@ const AuthPage = () => {
         toast.error(t('auth.invalidCreds'));
       }
     } else {
-      const success = signup(name, email, password, role);
+      const success = await signup(name, email, password, role);
       if (success) {
         toast.success(t('auth.accountCreated'));
         navigate('/');
@@ -145,10 +145,10 @@ const AuthPage = () => {
           <div className="mt-6 pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground text-center mb-3">{t('auth.quickDemo')}</p>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => { signup('Demo Shopkeeper', 'shop@demo.com', 'demo123', 'shopkeeper'); toast.success(t('auth.welcomeBack')); navigate('/'); }} className="py-2 px-3 rounded-lg pastel-mint-bg text-xs font-display font-semibold text-foreground hover:opacity-80 transition-all">
+              <button onClick={async () => { await signup('Demo Shopkeeper', 'shop@demo.com', 'demo123', 'shopkeeper'); toast.success(t('auth.welcomeBack')); navigate('/'); }} className="py-2 px-3 rounded-lg pastel-mint-bg text-xs font-display font-semibold text-foreground hover:opacity-80 transition-all">
                 {t('auth.tryShopkeeper')}
               </button>
-              <button onClick={() => { signup('Demo Customer', 'customer@demo.com', 'demo123', 'customer'); toast.success(t('auth.welcomeBack')); navigate('/'); }} className="py-2 px-3 rounded-lg pastel-pink-bg text-xs font-display font-semibold text-foreground hover:opacity-80 transition-all">
+              <button onClick={async () => { await signup('Demo Customer', 'customer@demo.com', 'demo123', 'customer'); toast.success(t('auth.welcomeBack')); navigate('/'); }} className="py-2 px-3 rounded-lg pastel-pink-bg text-xs font-display font-semibold text-foreground hover:opacity-80 transition-all">
                 {t('auth.tryCustomer')}
               </button>
             </div>

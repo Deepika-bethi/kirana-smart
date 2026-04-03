@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import api from '@/lib/api';
 
 export type UserRole = 'shopkeeper' | 'customer';
 
 export interface User {
+  _id?: string;
   id: string;
   name: string;
   email: string;
@@ -13,9 +15,9 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  signup: (name: string, email: string, password: string, role: UserRole) => boolean;
-  loginWithGoogle: (credential: string, role: UserRole) => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string, role: UserRole) => Promise<boolean>;
+  loginWithGoogle: (credential: string, role: UserRole) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -26,11 +28,6 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
-};
-
-const getStoredUsers = (): (User & { password: string })[] => {
-  const data = localStorage.getItem('six_users');
-  return data ? JSON.parse(data) : [];
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -44,47 +41,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('six_current_user', JSON.stringify(user));
     } else {
       localStorage.removeItem('six_current_user');
+      localStorage.removeItem('token');
     }
   }, [user]);
 
-  const login = (email: string, password: string): boolean => {
-    const users = getStoredUsers();
-    const found = users.find(u => u.email === email && u.password === password);
-    if (found) {
-      const { password: _, ...userData } = found;
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { user: userData, token } = response.data;
+      localStorage.setItem('token', token);
       setUser(userData);
       return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
-  const signup = (name: string, email: string, password: string, role: UserRole): boolean => {
-    const users = getStoredUsers();
-    if (users.find(u => u.email === email)) return false;
-    const newUser = { id: crypto.randomUUID(), name, email, password, role };
-    localStorage.setItem('six_users', JSON.stringify([...users, newUser]));
-    const { password: _, ...userData } = newUser;
-    setUser(userData);
-    return true;
+  const signup = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/signup', { name, email, password, role });
+      const { user: userData, token } = response.data;
+      localStorage.setItem('token', token);
+      setUser(userData);
+      return true;
+    } catch (error) {
+      console.error('Signup error:', error);
+      return false;
+    }
   };
 
-  const loginWithGoogle = (credential: string, role: UserRole) => {
+  const loginWithGoogle = async (credential: string, role: UserRole) => {
     try {
       const decoded: any = jwtDecode(credential);
-      const googleUser: User = {
-        id: decoded.sub,
+      const googleData = {
+        googleId: decoded.sub,
         name: decoded.name,
         email: decoded.email,
         picture: decoded.picture,
         role: role
       };
-      setUser(googleUser);
-      
-      // Also save to stored users if not exists
-      const users = getStoredUsers();
-      if (!users.find(u => u.email === googleUser.email)) {
-        localStorage.setItem('six_users', JSON.stringify([...users, { ...googleUser, password: 'google_auth' }]));
-      }
+
+      const response = await api.post('/auth/google', googleData);
+      const { user: userData, token } = response.data;
+      localStorage.setItem('token', token);
+      setUser(userData);
     } catch (error) {
       console.error('Google login failed:', error);
     }

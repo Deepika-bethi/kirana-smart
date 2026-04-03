@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '@/lib/api';
 
 export interface Product {
+  _id?: string;
   id: string;
   name: string;
   nameHi?: string;
@@ -21,6 +23,7 @@ export interface TransactionItem {
 }
 
 export interface Transaction {
+  _id?: string;
   id: string;
   userId: string;
   customerName: string;
@@ -39,10 +42,10 @@ interface StoreContextType {
   products: Product[];
   transactions: Transaction[];
   cart: CartItem[];
-  addProduct: (p: Omit<Product, 'id' | 'salesCount'>) => void;
-  updateProduct: (id: string, p: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  addTransaction: (t: Omit<Transaction, 'id' | 'date'>) => void;
+  addProduct: (p: Omit<Product, 'id' | 'salesCount'>) => Promise<void>;
+  updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  addTransaction: (t: Omit<Transaction, 'id' | 'date'>) => Promise<void>;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateCartQty: (productId: string, qty: number) => void;
@@ -69,69 +72,90 @@ export const useStore = () => {
   return ctx;
 };
 
-const SAMPLE_PRODUCTS: Product[] = [];
-
-const SAMPLE_TRANSACTIONS: Transaction[] = [];
-
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [products, setProducts] = useState<Product[]>(() => {
-    const stored = localStorage.getItem('six_products');
-    return stored ? JSON.parse(stored) : SAMPLE_PRODUCTS;
-  });
-
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const stored = localStorage.getItem('six_transactions');
-    return stored ? JSON.parse(stored) : SAMPLE_TRANSACTIONS;
-  });
-
+  const [products, setProducts] = useState<Product[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
-  useEffect(() => { localStorage.setItem('six_products', JSON.stringify(products)); }, [products]);
-  useEffect(() => { localStorage.setItem('six_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => {
+    fetchProducts();
+    fetchTransactions();
+  }, []);
 
-  const addProduct = (p: Omit<Product, 'id' | 'salesCount'>) => {
-    setProducts(prev => [...prev, { ...p, id: crypto.randomUUID(), salesCount: 0 }]);
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get('/products');
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
   };
 
-  const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  const fetchTransactions = async () => {
+    try {
+      const response = await api.get('/transactions');
+      setTransactions(response.data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const addProduct = async (p: Omit<Product, 'id' | 'salesCount'>) => {
+    try {
+      const response = await api.post('/products', p);
+      setProducts(prev => [...prev, response.data]);
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
   };
 
-  const addTransaction = (t: Omit<Transaction, 'id' | 'date'>) => {
-    const newTx: Transaction = { ...t, id: crypto.randomUUID(), date: new Date().toISOString() };
-    setTransactions(prev => [newTx, ...prev]);
-    // Update stock and sales
-    t.items.forEach(item => {
-      setProducts(prev => prev.map(p =>
-        p.id === item.productId
-          ? { ...p, quantity: Math.max(0, p.quantity - item.quantity), salesCount: p.salesCount + item.quantity }
-          : p
-      ));
-    });
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      const response = await api.put(`/products/${id}`, updates);
+      setProducts(prev => prev.map(p => (p._id === id || p.id === id) ? response.data : p));
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    try {
+      await api.delete(`/products/${id}`);
+      setProducts(prev => prev.filter(p => p._id !== id && p.id !== id));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const addTransaction = async (t: Omit<Transaction, 'id' | 'date'>) => {
+    try {
+      const response = await api.post('/transactions', t);
+      setTransactions(prev => [response.data, ...prev]);
+      // Refetch products to update stock/sales counts
+      fetchProducts();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+    }
   };
 
   const addToCart = (product: Product) => {
     setCart(prev => {
-      const existing = prev.find(c => c.product.id === product.id);
+      const existing = prev.find(c => (c.product._id === product._id || c.product.id === product.id));
       if (existing) {
-        return prev.map(c => c.product.id === product.id ? { ...c, quantity: c.quantity + 1 } : c);
+        return prev.map(c => (c.product._id === product._id || c.product.id === product.id) ? { ...c, quantity: c.quantity + 1 } : c);
       }
       return [...prev, { product, quantity: 1 }];
     });
   };
 
   const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(c => c.product.id !== productId));
+    setCart(prev => prev.filter(c => c.product._id !== productId && c.product.id !== productId));
   };
 
   const updateCartQty = (productId: string, qty: number) => {
     if (qty <= 0) { removeFromCart(productId); return; }
-    setCart(prev => prev.map(c => c.product.id === productId ? { ...c, quantity: qty } : c));
+    setCart(prev => prev.map(c => (c.product._id === productId || c.product.id === productId) ? { ...c, quantity: qty } : c));
   };
 
   const clearCart = () => setCart([]);
@@ -141,7 +165,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     setProducts([]);
     setTransactions([]);
     setCart([]);
-    window.location.href = '/auth'; // Redirect to auth page after reset
+    window.location.href = '/auth';
   };
 
   const getAIInsights = (): AIInsight[] => {
@@ -150,19 +174,19 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
     products.forEach(p => {
       if (p.salesCount > 50) {
-        insights.push({ productId: p.id, productName: p.name, type: 'high_demand', message: `🔥 ${p.name} is a high demand item! (${p.salesCount} units sold)`, severity: 'info' });
+        insights.push({ productId: p._id || p.id, productName: p.name, type: 'high_demand', message: `🔥 ${p.name} is a high demand item! (${p.salesCount} units sold)`, severity: 'info' });
       }
       if (p.salesCount < 15) {
-        insights.push({ productId: p.id, productName: p.name, type: 'low_demand', message: `📉 ${p.name} has low sales. Consider offers.`, severity: 'warning' });
+        insights.push({ productId: p._id || p.id, productName: p.name, type: 'low_demand', message: `📉 ${p.name} has low sales. Consider offers.`, severity: 'warning' });
       }
       if (p.quantity <= 5) {
-        insights.push({ productId: p.id, productName: p.name, type: 'restock', message: `⚠️ ${p.name} stock is low (${p.quantity} left). Restock recommended!`, severity: 'critical' });
+        insights.push({ productId: p._id || p.id, productName: p.name, type: 'restock', message: `⚠️ ${p.name} stock is low (${p.quantity} left). Restock recommended!`, severity: 'critical' });
       }
       if (p.expiryDate) {
         const expiry = new Date(p.expiryDate);
         const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         if (daysLeft <= 7 && daysLeft > 0) {
-          insights.push({ productId: p.id, productName: p.name, type: 'expiring', message: `🕐 ${p.name} expires in ${daysLeft} days!`, severity: 'critical' });
+          insights.push({ productId: p._id || p.id, productName: p.name, type: 'expiring', message: `🕐 ${p.name} expires in ${daysLeft} days!`, severity: 'critical' });
         }
       }
     });
