@@ -189,7 +189,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const t = (key: TranslationKey, replacements?: Record<string, string | number>): string => {
     const entry = translations[key];
     if (!entry) return key;
-    let text = entry[lang] || entry['en'];
+    let text: string = entry[lang] || entry['en'];
     if (replacements) {
       Object.entries(replacements).forEach(([k, v]) => {
         text = text.replace(`{${k}}`, String(v));
