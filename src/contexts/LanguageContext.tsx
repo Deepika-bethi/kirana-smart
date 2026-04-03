@@ -29,6 +29,9 @@ const translations = {
   'auth.invalidCreds': { en: 'Invalid credentials', hi: 'अमान्य क्रेडेंशियल', te: 'చెల్లని ఆధారాలు' },
   'auth.emailExists': { en: 'Email already exists', hi: 'ईमेल पहले से मौजूद है', te: 'ఇమెయిల్ ఇప్పటికే ఉంది' },
   'auth.or': { en: 'OR', hi: 'या', te: 'లేదా' },
+  'auth.loginWithGoogle': { en: 'Login with Google', hi: 'गूगल के साथ लॉगिन', te: 'గూగుల్‌తో లాగిన్' },
+  'auth.signupWithGoogle': { en: 'Sign up with Google', hi: 'गूगल के साथ साइन अप', te: 'గూగుల్‌తో సైన్ అప్' },
+  'auth.continueAs': { en: 'Continue as:', hi: 'के रूप में जारी रखें:', te: 'ఇలా కొనసాగండి:' },
 
   // Nav / Sidebar
   'nav.dashboard': { en: 'Dashboard', hi: 'डैशबोर्ड', te: 'డాష్‌బోర్డ్' },
@@ -147,6 +150,7 @@ const translations = {
 
   // Common
   'common.all': { en: 'All', hi: 'सभी', te: 'అన్నీ' },
+  'common.back': { en: 'Back', hi: 'पीछे', te: 'వెనుకకు' },
 
   // Categories
   'cat.Grains': { en: 'Grains', hi: 'अनाज', te: 'ధాన్యాలు' },

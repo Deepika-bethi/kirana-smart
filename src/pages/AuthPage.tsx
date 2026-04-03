@@ -14,6 +14,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('customer');
+  const [showGoogleRoleSelection, setShowGoogleRoleSelection] = useState(false);
   const { login, signup, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -70,10 +71,22 @@ const AuthPage = () => {
         {/* Form Card */}
         <div className="glass-card p-8">
           <div className="flex gap-2 mb-6">
-            <button onClick={() => setIsLogin(true)} className={`flex-1 py-2.5 rounded-xl font-display font-semibold text-sm transition-all ${isLogin ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}>
+            <button 
+              onClick={() => { 
+                setIsLogin(true); 
+                setShowGoogleRoleSelection(false); 
+              }} 
+              className={`flex-1 py-2.5 rounded-xl font-display font-semibold text-sm transition-all ${isLogin ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               {t('auth.login')}
             </button>
-            <button onClick={() => setIsLogin(false)} className={`flex-1 py-2.5 rounded-xl font-display font-semibold text-sm transition-all ${!isLogin ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}>
+            <button 
+              onClick={() => { 
+                setIsLogin(false); 
+                setShowGoogleRoleSelection(false); 
+              }} 
+              className={`flex-1 py-2.5 rounded-xl font-display font-semibold text-sm transition-all ${!isLogin ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               {t('auth.signup')}
             </button>
           </div>
@@ -130,16 +143,74 @@ const AuthPage = () => {
             </div>
 
             <div className="flex justify-center w-full">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                use_fedcm_for_prompt={false}
-                theme="outline"
-                shape="pill"
-                width="100%"
-                text={isLogin ? "signin_with" : "signup_with"}
-              />
+              <AnimatePresence mode="wait">
+                {!showGoogleRoleSelection ? (
+                  <motion.button
+                    key="google-btn"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    type="button"
+                    onClick={() => setShowGoogleRoleSelection(true)}
+                    className="w-full py-3 rounded-xl border-2 border-border flex items-center justify-center gap-3 hover:border-primary/50 transition-all font-display font-bold text-sm text-foreground bg-background"
+                  >
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+                    {isLogin ? t('auth.loginWithGoogle') : t('auth.signupWithGoogle')}
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="google-role"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="w-full space-y-4"
+                  >
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-display font-semibold text-foreground">{t('auth.continueAs')}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button" 
+                        onClick={() => setRole('shopkeeper')} 
+                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${role === 'shopkeeper' ? 'border-primary pastel-lavender-bg' : 'border-border hover:border-primary/50'}`}
+                      >
+                        <Store className="w-5 h-5 text-foreground" />
+                        <span className="text-xs font-display font-semibold text-foreground">{t('auth.shopkeeper')}</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setRole('customer')} 
+                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${role === 'customer' ? 'border-primary pastel-sky-bg' : 'border-border hover:border-primary/50'}`}
+                      >
+                        <ShoppingBag className="w-5 h-5 text-foreground" />
+                        <span className="text-xs font-display font-semibold text-foreground">{t('auth.customer')}</span>
+                      </button>
+                    </div>
+
+                    <div className="flex justify-center w-full">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        useOneTap
+                        use_fedcm_for_prompt={false}
+                        theme="outline"
+                        shape="pill"
+                        width="100%"
+                        text={isLogin ? "signin_with" : "signup_with"}
+                      />
+                    </div>
+
+                    <button 
+                      type="button"
+                      onClick={() => setShowGoogleRoleSelection(false)}
+                      className="w-full text-xs text-muted-foreground hover:text-foreground underline font-display transition-all"
+                    >
+                      {t('common.back')}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </form>
 
